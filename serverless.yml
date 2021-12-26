@@ -1,0 +1,199 @@
+app: clx-awsapi-ami-mgmt
+service: clx-awsapi-ami-mgmt
+frameworkVersion: ">=1.53.0"
+
+provider:
+  name: aws
+  runtime: python3.6
+  timeout: 120
+  memorySize: 512
+  logs:
+    restApi: true
+  apiGateway:
+    description: |
+      For adding AMI exceptions for a vpcx account
+  endpointType: PRIVATE
+  vpcEndpointIds:
+    - ${self:custom.${self:custom.stage}.vpcEndpointId}
+  tracing:
+    apiGateway: true
+    lambda: true
+  stage: ${self:custom.stage}
+  region: ${self:custom.region}
+  deploymentBucket:
+    name: ${self:custom.${self:custom.stage}.account_name}-lambda-package-us-east-1
+    serverSideEncryption: AES256
+  # authorizer: aws_iam
+  resourcePolicy:
+    - Effect: Allow
+      Principal: '*'
+      Action: execute-api:Invoke
+      Resource:
+        - execute-api:/*/*/*
+  iamRoleStatements:
+    - Effect: 'Allow'
+      Action:
+        - sts:AssumeRole
+        - iam:ListRoles
+        - secretsmanager:GetSecretValue
+        - ec2:DescribeRegions
+      Resource:
+        - '*'
+  environment:
+    sddcapi_boot_dir: config
+    log_level: ${self:custom.${self:custom.stage}.log_level}
+    vpcxiam_token_url: 'https://login.microsoftonline.com/test-org.onmicrosoft.com/oauth2/v2.0/token'
+    vpcxiam_client_id: ${self:custom.AMI_MGMT_CLIENT_ID.${opt:stage}}
+    vpcxiam_secret_name: ${self:custom.AMI_MGMT_SECRET_NAME}
+    vpcxiam_scope: ${self:custom.${self:custom.stage}.vpcxiam_scope}
+    vpcxiam_endpoint: ${self:custom.${self:custom.stage}.vpcxiam_endpoint}
+    vpcxiam_host: ${self:custom.${self:custom.stage}.vpcxiam_host}
+    ldap_server: ${self:custom.ldap.server}
+    ldap_username: ${self:custom.ldap.username}
+    ldap_password_secret_name: ${self:custom.ldap.password_secret_name}
+    ldap_search_base: ${self:custom.ldap.search_base}
+    ldap_object_class: ${self:custom.ldap.object_class}
+    ldap_group_name: ${self:custom.ldap.group_name}
+    ldap_lookup_attribute: ${self:custom.ldap.lookup_attribute}
+    msft_idp_tenant_id: ${self:custom.MSFT_IDP_TENANT_ID}
+    msft_idp_app_id: ${self:custom.MSFT_IDP_APP_ID.${opt:stage}}
+    msft_idp_client_roles: ${self:custom.MSFT_IDP_CLIENT_ROLES}
+    shared_appsync_secret_name: ${self:custom.shared_appsync_secret_name}
+
+functions:
+  - ami_exception:
+      name: ${self:service}-ami-exception-${self:provider.stage}
+      handler: sls/ami_exception/app.handler
+      events:
+        - http:
+            path: /v1/accounts/{account_id}/regions/{region_name}/amis/{image_id}/vpcs/{vpc_id}/ami_exception
+            method: put
+            request:
+              template:
+                application/json: '{}'
+        - http:
+            path: /v1/accounts/{account_id}/regions/{region_name}/amis/{image_id}/vpcs/{vpc_id}/ami_exception
+            method: delete
+      vpc:
+        securityGroupIds: ${self:custom.vpcconf.${self:custom.stage}.SecurityGroupIds}
+        subnetIds: ${self:custom.vpcconf.${self:custom.stage}.SubnetIds}
+
+custom:
+  prune:
+    automatic: true
+    number: 3
+  output:
+    file: stack-outputs.json
+  pythonRequirements:
+    dockerizePip: false
+    slim: true
+    slimPatterns:
+      - "**/*.egg-info*"
+    noDeploy: []
+    pipCmdExtraArgs:
+      - --extra-index-url=http://itsusralsp07062.test-org.com:8090
+      - --trusted-host=itsusralsp07062.test-org.com
+      - --extra-index-url https://pypi.jjapi.test-org.com/v1/itx-abp/private/dev/
+      - --extra-index-url https://pypi.jjapi.test-org.com/v1/itx-alz/shared/production/
+  stage: ${opt:stage}
+  region: ${opt:region, 'us-east-1'}
+  accountId: !Ref AWS::AccountId
+  dashboard:
+    lambda:
+      enabled: false
+  local:
+    account_name: itx-006
+    vpcEndpointId: vpce-0eea26637b80fbc88
+  dev:
+    account_name: itx-000
+    account_id: 75271
+    vpcEndpointId: vpce-01227fc69
+    vpcxiam_endpoint: 'https://vpce-012427fc69-kykwwlo6.execute-api.us-east-1.vpce.amazonaws.com/dev'
+    vpcxiam_host: 'pygqxstmyi.execute-api.us-east-1.amazonaws.com'
+    vpcxiam_scope: 'https://clx-awsapi-credential-dev.test-org.com/.default'
+    org_id: o-f83jk485va
+    log_level: DEBUG
+  qa:
+    account_name: itx-aba
+    account_id: 9525
+    vpcEndpointId: vpce-04172a900baf
+    vpcxiam_endpoint: 'https://vpce-041a900baf-v5mj0erg.execute-api.us-east-1.vpce.amazonaws.com/qa'
+    vpcxiam_host: '6017nj7dx3.execute-api.us-east-1.amazonaws.com'
+    vpcxiam_scope: 'https://clx-awsapi-credential-qa.test-org.com/.default'
+    org_id: o-nstcxtwr2w
+    log_level: INFO
+  prod:
+    account_name: itx-abp
+    account_id: 25
+    vpcEndpointId: vpce-0f641feab
+    vpcxiam_endpoint: 'https://vpce-0f642eab-as20t7wi.execute-api.us-east-1.vpce.amazonaws.com/prod'
+    vpcxiam_host: 'zrzxisy56i.execute-api.us-east-1.amazonaws.com'
+    vpcxiam_scope: 'https://clx-awsapi-credential-prod.test-org.com/.default'
+    org_id: o-jyktvg28g4
+    log_level: WARNING
+  vpcconf:
+    local:
+      SecurityGroupIds:
+        - sg-7a8b461f
+        - sg-1a59aa7d
+      VpcId: vpc-62d83407
+      SubnetIds:
+        - subnet-9c01d8d6
+        - subnet-2a928777
+    dev:
+      SecurityGroupIds:
+        - sg-8b864be4
+        - sg-57814c38
+      VpcId: vpc-e8b15187
+      SubnetIds:
+        - subnet-d1b151be
+        - subnet-eaa1b3c6
+    qa:
+      SecurityGroupIds:
+        - sg-ecc06383
+        - sg-68c76407
+      VpcId: vpc-39fb3b58
+      SubnetIds:
+        - subnet-86fb3be7
+        - subnet-82fb3be3
+    prod:
+      SecurityGroupIds:
+        - sg-48844927
+        - sg-1a844975
+      VpcId: vpc-b66e8fd9
+      SubnetIds:
+        - subnet-9a6e8ff5
+        - subnet-6371900c
+  MSFT_IDP_TENANT_ID: "3ac94b3-eafda6592a35"
+  MSFT_IDP_APP_ID:
+    dev: "https://clx-awsapi-ami-management-dev.test-org.com"
+    qa: "https://clx-awsapi-ami-management-qa.test-org.com"
+    prod: "https://clx-awsapi-ami-management-prod.test-org.com"
+  MSFT_IDP_CLIENT_ROLES: "writer"
+  ldap:
+    server: "ldap://nadir.test-org.com:3268"
+    username: "savchook"
+    password_secret_name: "ldap-password"
+    search_base: "dc=test-org,dc=com"
+    object_class: "person"
+    group_name: "its-ep-app-itxvpcx-itxadmins"
+    lookup_attribute: "userprincipalname"
+  AMI_MGMT_CLIENT_ID:
+    dev: "https://clx-awsapi-ami-management-dev.test-org.com"
+    qa: "https://clx-awsapi-ami-management-qa.test-org.com"
+    prod: "https://clx-awsapi-ami-management-prod.test-org.com"
+  AMI_MGMT_SECRET_NAME: "nextbot/ami/management"
+  shared_appsync_secret_name: NextBot/AppSync
+
+plugins:
+  - serverless-python-requirements
+  - serverless-pseudo-parameters
+  - serverless-stack-output
+  - serverless-prune-plugin
+
+package:
+  exclude:
+    - node_modules/**
+    - sls/ami_exception/tests/**
+    - sls/utils/test/**
+    - scripts/**

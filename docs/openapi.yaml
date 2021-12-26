@@ -1,0 +1,233 @@
+openapi: 3.0.1
+info:
+  title: EC2 AMI Management
+  description: |
+    API to manage list of approved exception AMI images
+    Example 1 - Add exception AMI
+
+      curl --location --request PUT 'https://vpce-0127fc69-kykwwlo6.execute-api.us-east-1.vpce.amazonaws.com/dev/v1/accounts/itx-046/regions/us-east-2/amis/ami-0443305dabd4be2bc/vpcs/*/ami_exception' \
+      --header 'authorization: Bearer ey...' \
+      --header 'Host: vrohhb.execute-api.us-east-1.amazonaws.com'
+
+    Example 2 - delete exception AMI
+
+      curl --location --request DELETE 'https://vpce-0127c69-kykwwlo6.execute-api.us-east-1.vpce.amazonaws.com/dev/v1/accounts/itx-046/regions/us-east-2/amis/ami-0443305dabd4be2bc/vpcs/*/ami_exception' \
+      --header 'authorization: Bearer ey...' \
+      --header 'Host: vrohhb.execute-api.us-east-1.amazonaws.com'
+  license:
+    name: TEST-ORG
+  version: 1.0.0
+servers:
+  - url: https://vpce-0427fc69-kykwwlo6.execute-api.us-east-1.vpce.amazonaws.com/dev
+  - url: https://vpce-0410baf-v5mj0erg.execute-api.us-east-1.vpce.amazonaws.com/qa
+  - url: https://vpce-0f6ab-as20t7wi.execute-api.us-east-1.vpce.amazonaws.com/prod
+
+components:
+  securitySchemes:
+    oauth2:
+      type: oauth2
+      description: This API uses OAuth 2.
+      flows:
+        clientCredentials:
+          tokenUrl: https://login.microsoftonline.com/test-org.onmicrosoft.com/oauth2/v2.0/token
+          scopes:
+            read: https://clx-awsapi-ami-management-dev.test-org.com/.default
+
+security:
+  - oauth2: [read]
+
+paths:
+  /v1/accounts/{account_id}/regions/{region_name}/amis/{image_id}/vpcs/{vpc_id}/ami_exception:
+    summary: ami management endpoint to add exception images
+    description: |
+      The AMI will be added to approved list of exception images
+    put:
+      parameters:
+        - in: header
+          name: Host
+          required: true
+          description: The API id of aws API Gateway.
+          schema:
+            type: string
+          example: |
+            { Host: vrottowhhb.execute-api.us-east-1.amazonaws.com }
+        - in: header
+          name: Authorization
+          required: true
+          description: Oauth2 token of the user or app with leading 'Bearer '
+          schema:
+            type: string
+        - in: path
+          name: account_id
+          required: true
+          description: aws account name
+          schema:
+            type: string
+          example: itx-046
+        - in: path
+          name: region_name
+          required: true
+          description: aws region name where the ami image is located
+          schema:
+            type: string
+          example: us-east-1
+        - in: path
+          name: image_id
+          required: true
+          description: AMI image id. May be wildcard to exempt all AMIs with in a VPC
+          schema:
+            type: string
+          example: ami-0652346abb029e48a
+        - in: path
+          name: vpc_id
+          required: true
+          description: VPC id authorized to use the AMI image. May be wildcard to exempt all VPC for the given AMI
+          schema:
+            type: string
+          example: vpc-03c6d466
+      responses:
+        200:
+          description: AMI has been added to the accounts AMI exception list
+          content:
+            application/json:
+              examples:
+                addedami:
+                  statusCode: 200,
+                  successMsg: '{"success": "AMI added [<image_id>, <region_name>, <account_id>, <vpc_id>]."}'
+        400:
+          description: At least one of the parameters in the request are invalid
+          content:
+            application/json:
+              examples:
+                regionInvalid:
+                  errorCode: 400,
+                  errorMessage: '{"error": "Please provide a valid region name in the url path"}'
+                imageInvalid:
+                  errorCode: 400,
+                  errorMsg: '{"error": "Please provide a valid AMI image id in the url path"}'
+                vpcInvalid:
+                  errorCode: 400,
+                  errorMsg: '{"error": "Please provide a valid VPC id in the url path"}'
+                wildcardInvalid:
+                  errorCode: 400
+                  errorMsg: '{"error": "Both VPC id and AMI image id cannot be wildcard"}'
+        401:
+          description: Authentication Failed
+          content:
+            application/json:
+              examples:
+                authFailure:
+                  errorCode: 401,
+                  errorMsg: '{"error": "Authentication Failed/Unauthorized"}'
+        404:
+          description: Account Invalid
+          content:
+            application/json:
+              examples:
+                accountInvalid:
+                  errorCode: 404
+                  errorMsg: '{"error": "Account <account-id> not found"}'
+        500:
+          description: Exception occurred
+          content:
+            application/json:
+              examples:
+                exceptionOccurred:
+                  errorCode: 500,
+                  errorMsg: '{"error": "<exception name>: <exception message>"}'
+    delete:
+      description: |
+        The AMI will be deleted from approved list of exception images
+      parameters:
+        - in: header
+          name: Host
+          required: true
+          description: The API id of aws API Gateway.
+          schema:
+            type: string
+          example: |
+            { Host: pygtmyi.execute-api.us-east-1.amazonaws.com }
+        - in: header
+          name: Authorization
+          required: true
+          description: Oauth2 token of the user or app with leading 'Bearer '
+          schema:
+            type: string
+        - in: path
+          name: account_id
+          required: true
+          description: aws account name
+          schema:
+            type: string
+          example: itx-046
+        - in: path
+          name: region_name
+          required: true
+          description: aws region name where the ami image is located
+          schema:
+            type: string
+          example: us-east-1
+        - in: path
+          name: image_id
+          required: true
+          description: AMI image id. May be wildcard to exempt all AMIs with in a VPC
+          schema:
+            type: string
+          example: ami-065234029e48a
+        - in: path
+          name: vpc_id
+          required: true
+          description: VPC id authorized to use the AMI image. May be wildcard to exempt all VPC for the given AMI
+          schema:
+            type: string
+          example: vpc-03c6d466
+      responses:
+        200:
+          description: AMI has been deleted from the account's AMI exception list
+          content:
+            application/json:
+              examples:
+                addedami:
+                  statusCode: 200,
+                  successMsg: '{"success": "AMI deleted [<image_id>, <region_name>, <account_id>, <vpc_id>]"}'
+        400:
+          description: At least one of the parameters in the request are invalid
+          content:
+            application/json:
+              examples:
+                regionInvalid:
+                  errorCode: 400,
+                  errorMessage: '{"error": "Please provide a valid region name in the url path"}'
+                imageInvalid:
+                  errorCode: 400,
+                  errorMsg: '{"error": "Please provide a valid AMI image id in the url path"}'
+                vpcInvalid:
+                  errorCode: 400,
+                  errorMsg: '{"error": "Please provide a valid VPC id in the url path"}'
+                wildcardInvalid:
+                  errorCode: 400
+                  errorMsg: '{"error": "Both VPC id and AMI image id cannot be wildcard"}'
+        401:
+          description: Authentication Failed
+          content:
+            application/json:
+              examples:
+                authFailure:
+                  errorCode: 401,
+                  errorMsg: '{"error": "Authentication Failed/Unauthorized"}'
+        404:
+          description: Account Invalid
+          content:
+            application/json:
+              examples:
+                accountInvalid:
+                  errorCode: 404
+                  errorMsg: '{"error": "Account <account-id> not found"}'
+        500:
+          description: Exception occurred
+          content:
+            application/json:
+              examples:
+                exceptionOccurred:
+                  errorCode: 500,
+                  errorMsg: '{"error": "<exception name>: <exception message>"}'

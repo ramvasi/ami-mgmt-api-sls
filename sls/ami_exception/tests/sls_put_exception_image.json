@@ -1,0 +1,17 @@
+{
+    "resource": "/v1/accounts/{account_id}/regions/{region_name}/amis/{image_id}/vpcs/{vpc_id}/ami_exception",
+    "path": "/v1/accounts/itx-046/regions/us-east-1/amis/ami-087c17d1fe0178315/vpcs/vpc-03c6d466/ami_exception",
+    "httpMethod": "PUT",
+    "headers": {"Authorization": "<token>"},
+    "multiValueHeaders": null,
+    "queryStringParameters": null,
+    "multiValueQueryStringParameters": null,
+    "pathParameters": {
+        "image_id": "ami-087c17d1fe0178315",
+        "region_name": "us-east-1",
+        "account_id": "itx-046",
+        "vpc_id": "vpc-03c6d466"},
+    "stageVariables": null,
+    "requestContext": {},
+    "body": ""
+}

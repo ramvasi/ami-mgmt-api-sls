@@ -1,0 +1,7 @@
+.serverless/
+deploy.cmd
+.idea/
+**/__pycache__
+node_modules/
+**/.pytest_cache
+.gitallowed

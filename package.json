@@ -1,0 +1,17 @@
+{
+  "dependencies": {
+    "serverless-package-python-functions": "^0.7.0",
+    "serverless-prune-plugin": "^1.5.1",
+    "serverless-pseudo-parameters": "^2.6.0",
+    "serverless-stack-output": "^0.2.3"
+  },
+  "devDependencies": {
+    "serverless-python-requirements": "^5.1.1"
+  },
+  "scripts": {
+    "gen-cred-file": "set sddcapi_boot_dir=D:\\Users\\RRavi14\\Documents\\workspace\\awsapi\\custodian\\config&& cd D:\\Users\\RRavi14\\Documents\\workspace\\awsapi\\custodian\\utils\\ && python -m temp_creds --account itx-000",
+    "gen-cred-url": "set sddcapi_boot_dir=D:\\Users\\RRavi14\\Documents\\workspace\\awsapi\\custodian\\config&& cd D:\\Users\\RRavi14\\Documents\\workspace\\awsapi\\custodian\\utils\\ && python -m temp_console_url --account itx-000",
+    "pytest": "pipenv run python -m coverage run --rcfile=coveragerc.cfg -m pytest && pipenv run python -m coverage report",
+    "pylint": "pipenv run python -m pylint --rcfile=D:\\Users\\RRavi14\\Documents\\workspace\\awsapi\\pylint\\pylint.cfg sls\\utils"
+  }
+}
